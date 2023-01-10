@@ -1,0 +1,15 @@
+app:
+  http_addr: :30010
+  db_conn: admin:123456@tcp(127.0.0.1:3306)/skyvision?charset=utf8mb4&parseTime=True&loc=UTC
+auth:
+  jwt_key: cwzPxVZX4GjfkH0lHyWH/Q==
+  jwt_exp: 168
+  git_id: b3bc0532bf8d8ce36b20
+  git_key: 04a790a8fc15ad6270c127b0cd5270151ccd45f8
+  redirect_url: https://www.baidu.com
+log:
+  level: debug
+  filename: server.log
+  max_size: 20
+  max_age: 10
+  max_backups: 10

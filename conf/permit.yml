@@ -1,0 +1,28 @@
+permits:
+    - url: /permits/all
+      permit: RIGHTS_QUERY|查询权限列表
+    - url: /permits/query
+      permit: RIGHTS_QUERY|搜索权限
+    - url: /permits/permit/add
+      permit: RIGHTS_ADD|创建权限
+    - url: /permits/permit/edit
+      permit: RIGHTS_UPDATE|修改权限
+    - url: /permits/permit/del/:id
+      permit: RIGHTS_DEL|删除权限
+    - url: /users/all
+      permit: USER_QUERY|用户目录
+    - url: /users/query
+      permit: USER_QUERY|用户搜索
+    - url: /users/user/add
+      permit: USER_ADD|新增用户
+    - url: /users/user/edit
+      permit: USER_INFO_EDIT|修改用户信息
+    - url: /users/pwd/edit
+      permit: USER_UPDATE|修改用户密码
+    - url: /users/avatar/edit
+      permit: USER_INFO_EDIT|修改用户头像
+    - url: /users/user/id/:id
+      permit: USER_DEL|通过ID删除用户
+    - url: /users/user/name/:name
+      permit: USER_DEL|通过用户名删除用户
+white_list: []
