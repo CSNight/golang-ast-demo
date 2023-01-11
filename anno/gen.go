@@ -48,10 +48,13 @@ var ptOpLog = regexp.MustCompile(`opLog=(".*?")`)
 
 func main() {
 	fset := token.NewFileSet()
+	// 初始化保存信息的结构体
 	var ctrls []*ControllerSpec
 	authSpec := &PermitSpec{}
+	// 遍历server文件夹
 	err := filepath.WalkDir("../server", func(path string, d fs.DirEntry, err error) error {
 		if !d.Type().IsDir() {
+			// 只解析特定前缀的文件
 			if strings.HasPrefix(d.Name(), "server_") {
 				f, err := os.Open(path)
 				if err != nil {
@@ -61,13 +64,16 @@ func main() {
 				if err != nil {
 					return err
 				}
+				// mode 采用parse comments 才能把注释解析进去
 				astf, err := parser.ParseFile(fset, "", string(codeBytes), parser.ParseComments|parser.AllErrors)
 				if err != nil {
 					fmt.Printf("err = %s", err)
 				}
 				controller := ControllerSpec{}
+				// 遍历ast
 				ast.Inspect(astf, func(n ast.Node) bool {
 					switch t := n.(type) {
+					// 函数节点提取接口方法信息
 					case *ast.FuncDecl:
 						doc := strings.Trim(t.Doc.Text(), "\t \n")
 						if doc == "" || !strings.HasPrefix(doc, "go:interface") {
@@ -75,6 +81,7 @@ func main() {
 						}
 						inter := parseInterface(t.Name.String(), doc, &controller, authSpec)
 						controller.Interfaces = append(controller.Interfaces, inter)
+						// 文件节点提取接口分组信息
 					case *ast.File:
 						doc := strings.Trim(t.Doc.Text(), "\t \n")
 						if doc == "" || !strings.HasPrefix(doc, "go:controller") {
@@ -93,7 +100,9 @@ func main() {
 	if err != nil {
 		return
 	}
+	// ast生成接口注册go代码
 	genRouter(ctrls)
+	// 生成权限yaml配置文件
 	ymlBytes, err := yaml.Marshal(authSpec)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -173,6 +182,7 @@ func genRouter(ctrls []*ControllerSpec) {
 	if err != nil {
 		panic(err)
 	}
+	// 构造import
 	f.Decls = append(f.Decls, &ast.GenDecl{
 		Tok: token.IMPORT,
 		Specs: []ast.Spec{
@@ -185,6 +195,7 @@ func genRouter(ctrls []*ControllerSpec) {
 		},
 	})
 	rootAst := addRootFuncDecl(ctrls)
+	// 将函数写入ast
 	for _, ctrl := range ctrls {
 		f.Decls = append(f.Decls, addRouterGroupFunc(ctrl.Name, ctrl.Interfaces))
 		rootAst.Body.List = append(rootAst.Body.List, &ast.ExprStmt{ //表达式语句
@@ -204,6 +215,7 @@ func genRouter(ctrls []*ControllerSpec) {
 	}
 	f.Decls = append(f.Decls, rootAst)
 
+	//ast to go file
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, f); err != nil {
 		panic(err)
@@ -212,6 +224,7 @@ func genRouter(ctrls []*ControllerSpec) {
 }
 
 func addRootFuncDecl(ctrls []*ControllerSpec) *ast.FuncDecl {
+	// 构造函数定义
 	funcDelc := &ast.FuncDecl{
 		Name: ast.NewIdent("Register"),
 		Body: &ast.BlockStmt{
@@ -251,6 +264,7 @@ func addRootFuncDecl(ctrls []*ControllerSpec) *ast.FuncDecl {
 			},
 		},
 	}
+	// 构造函数体
 	for _, ctrl := range ctrls {
 		funcDelc.Body.List = append(funcDelc.Body.List, &ast.AssignStmt{ //表达式语句
 			Lhs: []ast.Expr{ast.NewIdent(ctrl.Name)},
